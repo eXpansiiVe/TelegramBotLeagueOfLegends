@@ -60,18 +60,21 @@ func getRankData(id string) []byte {
 func filterRankData(schemeLoLData schemes.LoLAccount) (string, error) {
 	var playerRanks string = ""
 	var schemeLen int = len(schemeLoLData)
+	var noRankError error
 
-	for i := 0; i < schemeLen; i++ {
-		if schemeLoLData[i].QueueType == "RANKED_SOLO_5x5" {
-			playerRanks += fmt.Sprintf("Rank SoloQ: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
-			return playerRanks, nil
-		} else {
-			playerRanks += fmt.Sprintf("Rank Flex: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
-			return playerRanks, nil
+	if schemeLen > 0 {
+		for i := 0; i < schemeLen; i++ {
+			if schemeLoLData[i].QueueType == "RANKED_SOLO_5x5" {
+				playerRanks += fmt.Sprintf("Rank SoloQ: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+			} else {
+				playerRanks += fmt.Sprintf("Rank Flex: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+			}
 		}
+		return playerRanks, nil
 	}
-	errore := errors.New("no rank found")
-	return "", errore
+	noRankError = errors.New("no rank found")
+	return "", noRankError
+	
 }
 
 func getTelegramApi() []byte {
@@ -84,9 +87,7 @@ func getTelegramApi() []byte {
 
 func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error) {
 	// Debug
-	fmt.Println(chatId)
 	fmt.Println(message)
-	fmt.Println(messageId)
 
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
@@ -118,7 +119,7 @@ func main() {
 		json.Unmarshal(rawTelegramResponseData, &schemeTg)
 
 		fmt.Println("Sleeping")
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 
 		if updateID == schemeTg.Result[0].Message.MessageID {
 			fmt.Println("Inside if")
@@ -137,13 +138,11 @@ func main() {
 			message = fmt.Sprintf("No rank found for %s", schemeTg.Result[0].Message.Text)
 		}
 
-		
 		responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
 		if err != nil {
 			log.Println(err)
 		}
 		json.Unmarshal(responseMessage, &schemeTgMessageResponse)
-		fmt.Println(schemeTgMessageResponse.Result)
 		updateID = schemeTg.Result[0].Message.MessageID
 
 	}
