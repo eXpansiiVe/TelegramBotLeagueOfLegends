@@ -13,11 +13,12 @@ import (
 	"github.com/eXpansiiVe/LoLBot/pkg/schemes"
 )
 
-const apiKey string = "RGAPI-e719f2a1-8946-46fe-82f8-9c9a56c6eee8"
+const apiKey string = "RGAPI-963e66e9-a947-4f18-8b5b-7a299af69404"
 
 // Used to get a response from an API
 func getRequestData(link, error_message string) io.ReadCloser {
 	rawResponseData, err := http.Get(link)
+	fmt.Printf("Status code: %v\n", rawResponseData.StatusCode)
 	if err != nil {
 		fmt.Println(error_message, err)
 		return nil
@@ -48,6 +49,30 @@ func getAccountID(nickname string) []byte {
 	return responseAccountData
 }
 
+func getPlayerInfo(m map[string]string, s schemes.LoLAccount, numRank int) map[string]string {
+	switch numRank {
+	case 0:
+		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
+		m["Lp"] = "0"
+		m["Wins"] = "0"
+		m["Loses"] = "0"
+	case 1:
+		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
+		m["Lp"] = fmt.Sprintf("%v\n", s[0].LeaguePoints)
+		m["Wins"] = fmt.Sprintf("%v\n", s[0].Wins)
+		m["Loses"] = fmt.Sprintf("%v\n", s[0].Losses)
+	case 2:
+		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
+		m["Lp"] = fmt.Sprintf("%v\n", s[0].LeaguePoints)
+		m["Wins"] = fmt.Sprintf("%v\n", s[0].Wins)
+		m["Loses"] = fmt.Sprintf("%v\n", s[0].Losses)
+		m["Lp2"] = fmt.Sprintf("%v\n", s[1].LeaguePoints)
+		m["Wins2"] = fmt.Sprintf("%v\n", s[1].Wins)
+		m["Loses2"] = fmt.Sprintf("%v\n", s[1].Losses)
+	}
+	return m
+}
+
 // Get the summoner Data through API
 func getRankData(id string) []byte {
 
@@ -57,28 +82,30 @@ func getRankData(id string) []byte {
 
 	responsePlayerData := filterRequestData(rawResponsePlayerData, "Got an error reading the summoner Data body")
 
+	fmt.Println("response", string(responsePlayerData))
+	// TODO: check for a response of 403
+
 	defer rawResponsePlayerData.Close()
 	return responsePlayerData
 }
 
 // Parse the data to check if there's a rank and return it
-func filterRankData(schemeLoLData schemes.LoLAccount) (string, error) {
-	var playerRanks string = ""
+func filterRankData(schemeLoLData schemes.LoLAccount, m map[string]string) (int, error) {
 	var schemeLen int = len(schemeLoLData)
 	var noRankError error
 
 	if schemeLen > 0 {
 		for i := 0; i < schemeLen; i++ {
 			if schemeLoLData[i].QueueType == "RANKED_SOLO_5x5" {
-				playerRanks += fmt.Sprintf("Rank SoloQ: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+				m["RankSoloq"] = fmt.Sprintf("%s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
 			} else {
-				playerRanks += fmt.Sprintf("Rank Flex: %s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+				m["RankFlex"] = fmt.Sprintf("%s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
 			}
 		}
-		return playerRanks, nil
+		return schemeLen, nil
 	}
 	noRankError = errors.New("no rank found")
-	return "", noRankError
+	return schemeLen, noRankError
 
 }
 
@@ -116,6 +143,8 @@ func main() {
 	var schemeLoLData schemes.LoLAccount
 	var schemeTgMessageResponse schemes.ApiTelegramMessage
 
+	playerInfo := make(map[string]string)
+
 	var updateID int
 
 	for {
@@ -135,17 +164,23 @@ func main() {
 		responseAccountData := getAccountID(schemeTg.Result[0].Message.Text)
 		json.Unmarshal(responseAccountData, &schemeAccount)
 
+		// Write summoner level to the map
+		playerInfo["Level"] = fmt.Sprintf("%v\n", schemeAccount.SummonerLevel)
+
 		// Get the summoner data response
 		rankData := getRankData(schemeAccount.ID)
 		json.Unmarshal(rankData, &schemeLoLData)
 
-		// Check if there's a schemeLoLData.QueueType and if there's any take the actual rank 
-		rank, err := filterRankData(schemeLoLData)
-		message := fmt.Sprintf("%s\n%s", schemeTg.Result[0].Message.Text, rank)
+		// Check if there's a schemeLoLData.QueueType and if there's any take the actual rank
+		numRank, err := filterRankData(schemeLoLData, playerInfo)
+
 		if err != nil {
 			log.Println(err)
-			message = fmt.Sprintf("No rank found for %s", schemeTg.Result[0].Message.Text)
 		}
+
+		playerInfoRes := getPlayerInfo(playerInfo, schemeLoLData, numRank)
+		message := fmt.Sprintf("%v", playerInfoRes)
+		fmt.Println(message)
 
 		// Send a message to the message sender on telegram with the results
 		responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
@@ -155,7 +190,8 @@ func main() {
 
 		json.Unmarshal(responseMessage, &schemeTgMessageResponse)
 		fmt.Println("Response from telegram message ", schemeTgMessageResponse.Ok)
-		// Assign the messageId to the var updateID to not cycle on the same message
+		//Assign the messageId to the var updateID to not cycle on the same message
+
 		updateID = schemeTg.Result[0].Message.MessageID
 
 	}
