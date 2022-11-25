@@ -74,7 +74,7 @@ func filterRankData(schemeLoLData schemes.LoLAccount) (string, error) {
 	}
 	noRankError = errors.New("no rank found")
 	return "", noRankError
-	
+
 }
 
 func getTelegramApi() []byte {
@@ -86,13 +86,10 @@ func getTelegramApi() []byte {
 }
 
 func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error) {
-	// Debug
-	fmt.Println(message)
-
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
 	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
-	fmt.Println(formattedUrl)
+
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
 		return nil, err
@@ -119,7 +116,7 @@ func main() {
 		json.Unmarshal(rawTelegramResponseData, &schemeTg)
 
 		fmt.Println("Sleeping")
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		if updateID == schemeTg.Result[0].Message.MessageID {
 			fmt.Println("Inside if")
