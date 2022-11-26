@@ -54,31 +54,6 @@ func getAccountID(nickname string) []byte {
 	return responseAccountData
 }
 
-/*
-func getPlayerInfo(m map[string]string, s schemes.LoLAccount, numRank int) map[string]string {
-	switch numRank {
-	case 0:
-		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
-		m["Lp"] = "0"
-		m["Wins"] = "0"
-		m["Loses"] = "0"
-	case 1:
-		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
-		m["Lp"] = fmt.Sprintf("%v\n", s[0].LeaguePoints)
-		m["Wins"] = fmt.Sprintf("%v\n", s[0].Wins)
-		m["Loses"] = fmt.Sprintf("%v\n", s[0].Losses)
-	case 2:
-		m["Nickname"] = fmt.Sprintf("%v\n", s[0].SummonerName)
-		m["Lp"] = fmt.Sprintf("%v\n", s[0].LeaguePoints)
-		m["Wins"] = fmt.Sprintf("%v\n", s[0].Wins)
-		m["Loses"] = fmt.Sprintf("%v\n", s[0].Losses)
-		m["Lp2"] = fmt.Sprintf("%v\n", s[1].LeaguePoints)
-		m["Wins2"] = fmt.Sprintf("%v\n", s[1].Wins)
-		m["Loses2"] = fmt.Sprintf("%v\n", s[1].Losses)
-	}
-	return m
-}*/
-
 // Get the summoner Data through API
 func getSummonerData(id string) []byte {
 
@@ -106,18 +81,18 @@ func filterRankData(s schemes.LoLAccount, m map[string]string) error {
 	var noRankError error
 
 	if schemeLen > 0 {
-		m["Nickname"] = fmt.Sprintf("%s\n", s[0].SummonerName)
+		m["Nickname"] = fmt.Sprintf("%s", s[0].SummonerName)
 		for i := 0; i < schemeLen; i++ {
 			if s[i].QueueType == "RANKED_SOLO_5x5" {
-				m["RankSoloQ"] = fmt.Sprintf("%s %s\n", s[i].Tier, s[i].Rank)
+				m["RankSoloQ"] = fmt.Sprintf("%s %s", s[i].Tier, s[i].Rank)
 				m["LpQ"] = fmt.Sprintf("%v", s[i].LeaguePoints)
-				m["WinsQ"] = fmt.Sprintf("%v\n", s[i].Wins)
-				m["LosesQ"] = fmt.Sprintf("%v\n", s[i].Losses)
+				m["WinsQ"] = fmt.Sprintf("%v", s[i].Wins)
+				m["LosesQ"] = fmt.Sprintf("%v", s[i].Losses)
 			} else {
-				m["RankFlex"] = fmt.Sprintf("%s %s\n", s[i].Tier, s[i].Rank)
+				m["RankFlex"] = fmt.Sprintf("%s %s", s[i].Tier, s[i].Rank)
 				m["LpFlex"] = fmt.Sprintf("%v", s[i].LeaguePoints)
-				m["WinsFlex"] = fmt.Sprintf("%v\n", s[i].Wins)
-				m["LosesFlex"] = fmt.Sprintf("%v\n", s[i].Losses)
+				m["WinsFlex"] = fmt.Sprintf("%v", s[i].Wins)
+				m["LosesFlex"] = fmt.Sprintf("%v", s[i].Losses)
 			}
 		}
 		return nil
@@ -128,19 +103,43 @@ func filterRankData(s schemes.LoLAccount, m map[string]string) error {
 }
 
 // Create a formatted text message for telegram
-func messageTextFormatter(m map[string]string) string {
-	//numId := strings.Replace(m["imgId"], "\n", "", 1)
+func messageTextFormatter(m map[string]string, imgId string, s schemes.LoLAccount) (string, string) {
+	imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
+	schemeLen := len(s)
+	formattedText := fmt.Sprintf("<b>Nome:</b> %v\n", m["Nickname"])
+	formattedText += fmt.Sprintf("<b>Livello:</b> %v\n\n", m["Level"])
 
-	//imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + numId + ".png"
-	imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/7.png"
-
-	formattedText := fmt.Sprintf("[](%v)\n**Nome:** %v**Livello:** %v\n\n"+
-		"**FlexQ**\n **Lega:** %v **Vittorie:** %v **Sconfitte:** %v **Lp:** %v\n"+
-		"**SoloQ**\n\n **Lega:** %v **Vittorie:** %v **Sconfitte:** %v **Lp:** %v",
-		imgLink, m["Nickname"], m["Level"], m["RankFlex"], m["WinsFlex"], m["LosesFlex"], m["LpFlex"],
-		m["RankSoloQ"], m["WinsQ"], m["LosesQ"], m["LpQ"])
-
-	return formattedText
+	if schemeLen == 1 {
+		if s[0].QueueType == "RANKED_SOLO_5x5" {
+			formattedText += fmt.Sprintf("<b>SoloQ</b> \n")
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpQ"])
+		} else {
+			formattedText += fmt.Sprintf("<b>Flex</b>\n")
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpFlex"])
+		}
+	} else {
+		if s[0].QueueType == "RANKED_SOLO_5x5" || s[1].QueueType == "RANKED_SOLO_5x5" {
+			formattedText += fmt.Sprintf("<b>SoloQ</b> \n")
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpQ"])
+		}
+		if s[0].QueueType == "RANKED_FLEX_SR" || s[1].QueueType == "RANKED_FLEX_SR" {
+			formattedText += fmt.Sprintf("<b>Flex</b>\n")
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpFlex"])
+		}
+	}
+	return formattedText, imgLink
 }
 
 // Get telegram data through API
@@ -157,11 +156,12 @@ func getTelegramApi() []byte {
 	return responseTelegramData
 }
 
-// Send response to telegram through API and return a response
-func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error) {
+// Send photo message to telegram through API and return a response
+func sendPhotoMessage(chatId int64, messageId int, message string, link string) ([]byte, error) {
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
-	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&parse_mode=markdown&text=" + url.QueryEscape(message)
+	fmt.Println("%v\n%v\n%v\n%v", chatIdString, messageIdString, message, link)
+	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -180,6 +180,28 @@ func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error
 	return responseData, nil
 }
 
+// Send message to telegram through API and return a response
+func sendMessage(chatId int64, messageId int, message string) ([]byte, error) {
+	chatIdString := fmt.Sprintf("%d", chatId)
+	messageIdString := fmt.Sprintf("%d", messageId)
+	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
+
+	rawResponseData, err := http.Get(formattedUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(rawResponseData.Body)
+	responseData, err := io.ReadAll(rawResponseData.Body)
+	if err != nil {
+		return nil, err
+	}
+	return responseData, nil
+}
 func main() {
 
 	var updateID int
@@ -218,8 +240,8 @@ func main() {
 			fmt.Println("Got an error unmarshal response account data to schemePlayerNotFound")
 		}
 		if schemePlayerNotFound.Status.StatusCode == 404 {
-			message := "Player not found!"
-			responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
+			message := fmt.Sprintf("L'username %s non è valido!", schemeTg.Result[0].Message.Text)
+			responseMessage, err := sendMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
 			if err != nil {
 				log.Println(err)
 			}
@@ -242,7 +264,8 @@ func main() {
 
 		// Write summoner level to the map
 		playerInfo["Level"] = fmt.Sprintf("%v", schemeAccount.SummonerLevel)
-		playerInfo["imgId"] = fmt.Sprintf("%v\n", schemeAccount.ProfileIconID)
+		// Write imgId to var
+		imgId := fmt.Sprintf("%v", schemeAccount.ProfileIconID)
 
 		// Get the summoner data response
 		rankData := getSummonerData(schemeAccount.ID)
@@ -254,14 +277,33 @@ func main() {
 		// Check if there's a schemeLoLData.QueueType and if there's any take the actual rank
 		err = filterRankData(schemeLoLData, playerInfo)
 
+		// If player rank not found
 		if err != nil {
 			log.Println(err)
+			message := fmt.Sprintf("Il rank del player %s non è stato trovato!", schemeTg.Result[0].Message.Text)
+			// Send a message to the message sender on telegram with the results
+			responseMessage, err := sendMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			err = json.Unmarshal(responseMessage, &schemeTgMessageResponse)
+			if err != nil {
+				fmt.Println("Got error unmarshal response message")
+			}
+			fmt.Println("Response from telegram message ", schemeTgMessageResponse.Ok)
+			//Assign the messageId to the var updateID to not cycle on the same message
+
+			updateID = schemeTg.Result[0].Message.MessageID
+			continue
 		}
 
-		message := messageTextFormatter(playerInfo)
+		// format the message with the playerInfo data
+		message, imgLink := messageTextFormatter(playerInfo, imgId, schemeLoLData)
 
 		// Send a message to the message sender on telegram with the results
-		responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
+		responseMessage, err := sendPhotoMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message, imgLink)
 		if err != nil {
 			log.Println(err)
 		}
@@ -271,8 +313,8 @@ func main() {
 			fmt.Println("Got error unmarshal response message")
 		}
 		fmt.Println("Response from telegram message ", schemeTgMessageResponse.Ok)
-		//Assign the messageId to the var updateID to not cycle on the same message
 
+		//Assign the messageId to the var updateID to not cycle on the same message
 		updateID = schemeTg.Result[0].Message.MessageID
 
 	}
