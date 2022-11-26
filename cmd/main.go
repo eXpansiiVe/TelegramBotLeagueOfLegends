@@ -54,6 +54,7 @@ func getAccountID(nickname string) []byte {
 	return responseAccountData
 }
 
+/*
 func getPlayerInfo(m map[string]string, s schemes.LoLAccount, numRank int) map[string]string {
 	switch numRank {
 	case 0:
@@ -76,10 +77,10 @@ func getPlayerInfo(m map[string]string, s schemes.LoLAccount, numRank int) map[s
 		m["Loses2"] = fmt.Sprintf("%v\n", s[1].Losses)
 	}
 	return m
-}
+}*/
 
 // Get the summoner Data through API
-func getRankData(id string) []byte {
+func getSummonerData(id string) []byte {
 
 	playerDataLink := "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + url.QueryEscape(id) + "?api_key=" + url.QueryEscape(apiKey)
 
@@ -100,23 +101,46 @@ func getRankData(id string) []byte {
 }
 
 // Parse the data to check if there's a rank and return it
-func filterRankData(schemeLoLData schemes.LoLAccount, m map[string]string) (int, error) {
-	var schemeLen = len(schemeLoLData)
+func filterRankData(s schemes.LoLAccount, m map[string]string) error {
+	var schemeLen = len(s)
 	var noRankError error
 
 	if schemeLen > 0 {
+		m["Nickname"] = fmt.Sprintf("%s\n", s[0].SummonerName)
 		for i := 0; i < schemeLen; i++ {
-			if schemeLoLData[i].QueueType == "RANKED_SOLO_5x5" {
-				m["RankSoloq"] = fmt.Sprintf("%s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+			if s[i].QueueType == "RANKED_SOLO_5x5" {
+				m["RankSoloQ"] = fmt.Sprintf("%s %s\n", s[i].Tier, s[i].Rank)
+				m["LpQ"] = fmt.Sprintf("%v", s[i].LeaguePoints)
+				m["WinsQ"] = fmt.Sprintf("%v\n", s[i].Wins)
+				m["LosesQ"] = fmt.Sprintf("%v\n", s[i].Losses)
 			} else {
-				m["RankFlex"] = fmt.Sprintf("%s %s\n", schemeLoLData[i].Tier, schemeLoLData[i].Rank)
+				m["RankFlex"] = fmt.Sprintf("%s %s\n", s[i].Tier, s[i].Rank)
+				m["LpFlex"] = fmt.Sprintf("%v", s[i].LeaguePoints)
+				m["WinsFlex"] = fmt.Sprintf("%v\n", s[i].Wins)
+				m["LosesFlex"] = fmt.Sprintf("%v\n", s[i].Losses)
 			}
 		}
-		return schemeLen, nil
+		return nil
 	}
-	noRankError = errors.New("no rank found")
-	return schemeLen, noRankError
+	noRankError = errors.New("rank not found")
+	return noRankError
 
+}
+
+// Create a formatted text message for telegram
+func messageTextFormatter(m map[string]string) string {
+	//numId := strings.Replace(m["imgId"], "\n", "", 1)
+
+	//imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + numId + ".png"
+	imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/7.png"
+
+	formattedText := fmt.Sprintf("[](%v)\n**Nome:** %v**Livello:** %v\n\n"+
+		"**FlexQ**\n **Lega:** %v **Vittorie:** %v **Sconfitte:** %v **Lp:** %v\n"+
+		"**SoloQ**\n\n **Lega:** %v **Vittorie:** %v **Sconfitte:** %v **Lp:** %v",
+		imgLink, m["Nickname"], m["Level"], m["RankFlex"], m["WinsFlex"], m["LosesFlex"], m["LpFlex"],
+		m["RankSoloQ"], m["WinsQ"], m["LosesQ"], m["LpQ"])
+
+	return formattedText
 }
 
 // Get telegram data through API
@@ -137,7 +161,7 @@ func getTelegramApi() []byte {
 func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error) {
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
-	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
+	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&parse_mode=markdown&text=" + url.QueryEscape(message)
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -188,7 +212,7 @@ func main() {
 		// Get the id of the riot account
 		responseAccountData := getAccountID(schemeTg.Result[0].Message.Text)
 
-		// Check if the player exist, if not send a message
+		// Check if the player exist, if not send a message, assign to updateID the new value and goes to new cycle
 		err = json.Unmarshal(responseAccountData, &schemePlayerNotFound)
 		if err != nil {
 			fmt.Println("Got an error unmarshal response account data to schemePlayerNotFound")
@@ -210,31 +234,31 @@ func main() {
 			updateID = schemeTg.Result[0].Message.MessageID
 			continue
 		}
+
 		err = json.Unmarshal(responseAccountData, &schemeAccount)
 		if err != nil {
 			fmt.Println("Got error unmarshal response account data")
 		}
 
 		// Write summoner level to the map
-		playerInfo["Level"] = fmt.Sprintf("%v\n", schemeAccount.SummonerLevel)
+		playerInfo["Level"] = fmt.Sprintf("%v", schemeAccount.SummonerLevel)
+		playerInfo["imgId"] = fmt.Sprintf("%v\n", schemeAccount.ProfileIconID)
 
 		// Get the summoner data response
-		rankData := getRankData(schemeAccount.ID)
+		rankData := getSummonerData(schemeAccount.ID)
 		err = json.Unmarshal(rankData, &schemeLoLData)
 		if err != nil {
 			fmt.Println("Got error unmarshal rank data")
 		}
 
 		// Check if there's a schemeLoLData.QueueType and if there's any take the actual rank
-		numRank, err := filterRankData(schemeLoLData, playerInfo)
+		err = filterRankData(schemeLoLData, playerInfo)
 
 		if err != nil {
 			log.Println(err)
 		}
 
-		playerInfoRes := getPlayerInfo(playerInfo, schemeLoLData, numRank)
-		message := fmt.Sprintf("%v", playerInfoRes)
-		fmt.Println(message)
+		message := messageTextFormatter(playerInfo)
 
 		// Send a message to the message sender on telegram with the results
 		responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
