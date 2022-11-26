@@ -13,7 +13,7 @@ import (
 	"github.com/eXpansiiVe/LoLBot/pkg/schemes"
 )
 
-const apiKey string = "RGAPI-963e66e9-a947-4f18-8b5b-7a299af69404"
+const apiKey string = "RGAPI-fd2cdcde-e835-44da-8648-4c691175c919"
 
 // Used to get a response from an API
 func getRequestData(link, errorMessage string) io.ReadCloser {
@@ -157,17 +157,19 @@ func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error
 }
 
 func main() {
-	// Instantiate every schemes
-	var schemeTg schemes.ApiTelegram
-	var schemeAccount schemes.AccountRiot
-	var schemeLoLData schemes.LoLAccount
-	var schemeTgMessageResponse schemes.ApiTelegramMessage
-
-	playerInfo := make(map[string]string)
 
 	var updateID int
 
 	for {
+		// Instantiate every schemes
+		var schemeTg schemes.ApiTelegram
+		var schemeAccount schemes.AccountRiot
+		var schemeLoLData schemes.LoLAccount
+		var schemeTgMessageResponse schemes.ApiTelegramMessage
+		var schemePlayerNotFound schemes.PlayerNotFound
+
+		playerInfo := make(map[string]string)
+
 		// Get telegram response data
 		rawTelegramResponseData := getTelegramApi()
 		err := json.Unmarshal(rawTelegramResponseData, &schemeTg)
@@ -185,6 +187,29 @@ func main() {
 		}
 		// Get the id of the riot account
 		responseAccountData := getAccountID(schemeTg.Result[0].Message.Text)
+
+		// Check if the player exist, if not send a message
+		err = json.Unmarshal(responseAccountData, &schemePlayerNotFound)
+		if err != nil {
+			fmt.Println("Got an error unmarshal response account data to schemePlayerNotFound")
+		}
+		if schemePlayerNotFound.Status.StatusCode == 404 {
+			message := "Player not found!"
+			responseMessage, err := sendHttpMessage(schemeTg.Result[0].Message.Chat.ID, schemeTg.Result[0].Message.MessageID, message)
+			if err != nil {
+				log.Println(err)
+			}
+
+			err = json.Unmarshal(responseMessage, &schemeTgMessageResponse)
+			if err != nil {
+				fmt.Println("Got error unmarshal response message")
+			}
+			fmt.Println("Response from telegram message ", schemeTgMessageResponse.Ok)
+			//Assign the messageId to the var updateID to not cycle on the same message
+
+			updateID = schemeTg.Result[0].Message.MessageID
+			continue
+		}
 		err = json.Unmarshal(responseAccountData, &schemeAccount)
 		if err != nil {
 			fmt.Println("Got error unmarshal response account data")
