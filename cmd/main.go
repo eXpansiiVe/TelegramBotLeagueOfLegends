@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/eXpansiiVe/LoLBot/pkg/schemes"
@@ -63,8 +64,7 @@ func getSummonerData(id string) []byte {
 
 	responsePlayerData := filterRequestData(rawResponsePlayerData, "Got an error reading the summoner Data body")
 
-	fmt.Println("response", string(responsePlayerData))
-	// TODO: check for a response of 403
+	fmt.Println("response from getting summoner data", string(responsePlayerData))
 
 	defer func(rawResponsePlayerData io.ReadCloser) {
 		err := rawResponsePlayerData.Close()
@@ -104,7 +104,7 @@ func filterRankData(s schemes.LoLAccount, m map[string]string) error {
 
 // Create a formatted text message for telegram
 func messageTextFormatter(m map[string]string, imgId string, s schemes.LoLAccount) (string, string) {
-	imgLink := "http://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
+	imgLink := "https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
 	schemeLen := len(s)
 	formattedText := fmt.Sprintf("<b>Nome:</b> %v\n", m["Nickname"])
 	formattedText += fmt.Sprintf("<b>Livello:</b> %v\n\n", m["Level"])
@@ -160,7 +160,7 @@ func getTelegramApi() []byte {
 func sendPhotoMessage(chatId int64, messageId int, message string, link string) ([]byte, error) {
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
-	fmt.Println("%v\n%v\n%v\n%v", chatIdString, messageIdString, message, link)
+	fmt.Printf("%v\n%v\n%v\n%v\n", chatIdString, messageIdString, message, link)
 	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
 
 	rawResponseData, err := http.Get(formattedUrl)
@@ -231,6 +231,10 @@ func main() {
 			fmt.Println("Inside if")
 			continue
 		}
+		if !strings.HasPrefix(schemeTg.Result[0].Message.Text, "/euw") {
+			continue
+		}
+		schemeTg.Result[0].Message.Text = strings.ReplaceAll(schemeTg.Result[0].Message.Text, "/euw", "")
 		// Get the id of the riot account
 		responseAccountData := getAccountID(schemeTg.Result[0].Message.Text)
 
