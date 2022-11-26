@@ -1,6 +1,5 @@
 package schemes
 
-
 type LoLAccount []struct {
 	LeagueID     string `json:"leagueId"`
 	QueueType    string `json:"queueType"`
