@@ -16,11 +16,11 @@ import (
 const apiKey string = "RGAPI-963e66e9-a947-4f18-8b5b-7a299af69404"
 
 // Used to get a response from an API
-func getRequestData(link, error_message string) io.ReadCloser {
+func getRequestData(link, errorMessage string) io.ReadCloser {
 	rawResponseData, err := http.Get(link)
 	fmt.Printf("Status code: %v\n", rawResponseData.StatusCode)
 	if err != nil {
-		fmt.Println(error_message, err)
+		fmt.Println(errorMessage, err)
 		return nil
 	}
 
@@ -28,10 +28,10 @@ func getRequestData(link, error_message string) io.ReadCloser {
 }
 
 // A simple reader use to read the ResponseDate passed by parameter
-func filterRequestData(rawResponseData io.ReadCloser, error_message string) []byte {
+func filterRequestData(rawResponseData io.ReadCloser, errorMessage string) []byte {
 	responseData, err := io.ReadAll(rawResponseData)
 	if err != nil {
-		fmt.Println(error_message, err)
+		fmt.Println(errorMessage, err)
 		return nil
 	}
 
@@ -45,7 +45,12 @@ func getAccountID(nickname string) []byte {
 	rawResponseAccountData := getRequestData(accountLink, "Got an error retrieving the Account ID api")
 
 	responseAccountData := filterRequestData(rawResponseAccountData, "Got an error reading the account ID body")
-	defer rawResponseAccountData.Close()
+	defer func(rawResponseAccountData io.ReadCloser) {
+		err := rawResponseAccountData.Close()
+		if err != nil {
+			fmt.Println("Got an error closing the response account data")
+		}
+	}(rawResponseAccountData)
 	return responseAccountData
 }
 
@@ -85,13 +90,18 @@ func getRankData(id string) []byte {
 	fmt.Println("response", string(responsePlayerData))
 	// TODO: check for a response of 403
 
-	defer rawResponsePlayerData.Close()
+	defer func(rawResponsePlayerData io.ReadCloser) {
+		err := rawResponsePlayerData.Close()
+		if err != nil {
+			fmt.Println("Got an error closing the response account data")
+		}
+	}(rawResponsePlayerData)
 	return responsePlayerData
 }
 
 // Parse the data to check if there's a rank and return it
 func filterRankData(schemeLoLData schemes.LoLAccount, m map[string]string) (int, error) {
-	var schemeLen int = len(schemeLoLData)
+	var schemeLen = len(schemeLoLData)
 	var noRankError error
 
 	if schemeLen > 0 {
@@ -114,7 +124,12 @@ func getTelegramApi() []byte {
 	rawResponseTelegramData := getRequestData("https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/getUpdates?offset=-1", "Got an error retrieving telegram response")
 	responseTelegramData := filterRequestData(rawResponseTelegramData, "Got an error while reading the body")
 
-	defer rawResponseTelegramData.Close()
+	defer func(rawResponseTelegramData io.ReadCloser) {
+		err := rawResponseTelegramData.Close()
+		if err != nil {
+			fmt.Println("Got an error closing the response account data")
+		}
+	}(rawResponseTelegramData)
 	return responseTelegramData
 }
 
@@ -128,7 +143,12 @@ func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	defer rawResponseData.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(rawResponseData.Body)
 	responseData, err := io.ReadAll(rawResponseData.Body)
 	if err != nil {
 		return nil, err
@@ -137,7 +157,7 @@ func sendHttpMessage(chatId int64, messageId int, message string) ([]byte, error
 }
 
 func main() {
-	// Instanciate every schemes
+	// Instantiate every schemes
 	var schemeTg schemes.ApiTelegram
 	var schemeAccount schemes.AccountRiot
 	var schemeLoLData schemes.LoLAccount
@@ -150,7 +170,10 @@ func main() {
 	for {
 		// Get telegram response data
 		rawTelegramResponseData := getTelegramApi()
-		json.Unmarshal(rawTelegramResponseData, &schemeTg)
+		err := json.Unmarshal(rawTelegramResponseData, &schemeTg)
+		if err != nil {
+			fmt.Println("Got error unmarshal raw telegram response data")
+		}
 		// Sleep the app to not spam too much requests
 		fmt.Println("Sleeping")
 		time.Sleep(5 * time.Second)
@@ -162,14 +185,20 @@ func main() {
 		}
 		// Get the id of the riot account
 		responseAccountData := getAccountID(schemeTg.Result[0].Message.Text)
-		json.Unmarshal(responseAccountData, &schemeAccount)
+		err = json.Unmarshal(responseAccountData, &schemeAccount)
+		if err != nil {
+			fmt.Println("Got error unmarshal response account data")
+		}
 
 		// Write summoner level to the map
 		playerInfo["Level"] = fmt.Sprintf("%v\n", schemeAccount.SummonerLevel)
 
 		// Get the summoner data response
 		rankData := getRankData(schemeAccount.ID)
-		json.Unmarshal(rankData, &schemeLoLData)
+		err = json.Unmarshal(rankData, &schemeLoLData)
+		if err != nil {
+			fmt.Println("Got error unmarshal rank data")
+		}
 
 		// Check if there's a schemeLoLData.QueueType and if there's any take the actual rank
 		numRank, err := filterRankData(schemeLoLData, playerInfo)
@@ -188,7 +217,10 @@ func main() {
 			log.Println(err)
 		}
 
-		json.Unmarshal(responseMessage, &schemeTgMessageResponse)
+		err = json.Unmarshal(responseMessage, &schemeTgMessageResponse)
+		if err != nil {
+			fmt.Println("Got error unmarshal response message")
+		}
 		fmt.Println("Response from telegram message ", schemeTgMessageResponse.Ok)
 		//Assign the messageId to the var updateID to not cycle on the same message
 
