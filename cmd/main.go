@@ -53,7 +53,6 @@ func filterRequestData(rawResponseData io.ReadCloser, errorMessage string) []byt
 		log.Println(errorMessage, err)
 		return nil
 	}
-
 	return responseData
 }
 
@@ -96,69 +95,68 @@ func getSummonerData(id string) []byte {
 }
 
 // Parse the data to check if there's a rank and return it
-func filterRankData(s schemes.LoLAccount, m map[string]string) error {
+func filterRankData(schemeLolData schemes.LoLAccount, playerSlice map[string]string) error {
 	log.Println("Inside function filterRankData")
-	var schemeLen = len(s)
+	var schemeLen = len(schemeLolData)
 	var noRankError error
 
 	if schemeLen > 0 {
-		m["Nickname"] = s[0].SummonerName
+		playerSlice["Nickname"] = schemeLolData[0].SummonerName
 		for i := 0; i < schemeLen; i++ {
-			if s[i].QueueType == "RANKED_SOLO_5x5" {
-				m["RankSoloQ"] = fmt.Sprintf("%s %s", s[i].Tier, s[i].Rank)
-				m["LpQ"] = fmt.Sprintf("%v", s[i].LeaguePoints)
-				m["WinsQ"] = fmt.Sprintf("%v", s[i].Wins)
-				m["LosesQ"] = fmt.Sprintf("%v", s[i].Losses)
+			if schemeLolData[i].QueueType == "RANKED_SOLO_5x5" {
+				playerSlice["RankSoloQ"] = fmt.Sprintf("%s %s", schemeLolData[i].Tier, schemeLolData[i].Rank)
+				playerSlice["LpQ"] = fmt.Sprintf("%v", schemeLolData[i].LeaguePoints)
+				playerSlice["WinsQ"] = fmt.Sprintf("%v", schemeLolData[i].Wins)
+				playerSlice["LosesQ"] = fmt.Sprintf("%v", schemeLolData[i].Losses)
 			} else {
-				m["RankFlex"] = fmt.Sprintf("%s %s", s[i].Tier, s[i].Rank)
-				m["LpFlex"] = fmt.Sprintf("%v", s[i].LeaguePoints)
-				m["WinsFlex"] = fmt.Sprintf("%v", s[i].Wins)
-				m["LosesFlex"] = fmt.Sprintf("%v", s[i].Losses)
+				playerSlice["RankFlex"] = fmt.Sprintf("%s %s", schemeLolData[i].Tier, schemeLolData[i].Rank)
+				playerSlice["LpFlex"] = fmt.Sprintf("%v", schemeLolData[i].LeaguePoints)
+				playerSlice["WinsFlex"] = fmt.Sprintf("%v", schemeLolData[i].Wins)
+				playerSlice["LosesFlex"] = fmt.Sprintf("%v", schemeLolData[i].Losses)
 			}
 		}
 		return nil
 	}
 	noRankError = errors.New("rank not found")
 	return noRankError
-
 }
 
 // Create a formatted text message for telegram
-func messageTextFormatter(m map[string]string, imgId string, s schemes.LoLAccount) (string, string) {
+func messageTextFormatter(playerSlice map[string]string, imgId string, schemeLolData schemes.LoLAccount) (string, string) {
 	log.Println("Inside function messageTextFormatter")
 	imgLink := "https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
-	schemeLen := len(s)
-	formattedText := fmt.Sprintf("<b>Nome:</b> %v\n", m["Nickname"])
-	formattedText += fmt.Sprintf("<b>Livello:</b> %v\n\n", m["Level"])
+	schemeLen := len(schemeLolData)
+	formattedText := fmt.Sprintf("<b>Nome:</b> %v\n", playerSlice["Nickname"])
+	formattedText += fmt.Sprintf("<b>Livello:</b> %v\n\n", playerSlice["Level"])
 
 	if schemeLen == 1 {
-		if s[0].QueueType == "RANKED_SOLO_5x5" {
+		if schemeLolData[0].QueueType == "RANKED_SOLO_5x5" {
 			formattedText += "<b>SoloQ</b> \n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankSoloQ"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsQ"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesQ"])
-			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpQ"])
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpQ"])
 		} else {
 			formattedText += "<b>Flex</b>\n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankFlex"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsFlex"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesFlex"])
-			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpFlex"])
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpFlex"])
 		}
 	} else {
-		if s[0].QueueType == "RANKED_SOLO_5x5" || s[1].QueueType == "RANKED_SOLO_5x5" {
+		if schemeLolData[0].QueueType == "RANKED_SOLO_5x5" || schemeLolData[1].QueueType == "RANKED_SOLO_5x5" {
 			formattedText += "<b>SoloQ</b> \n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankSoloQ"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsQ"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesQ"])
-			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpQ"])
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpQ"])
 		}
-		if s[0].QueueType == "RANKED_FLEX_SR" || s[1].QueueType == "RANKED_FLEX_SR" {
+		if schemeLolData[0].QueueType == "RANKED_FLEX_SR" || schemeLolData[1].QueueType == "RANKED_FLEX_SR" {
 			formattedText += "<b>Flex</b>\n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", m["RankFlex"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", m["WinsFlex"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", m["LosesFlex"])
-			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", m["LpFlex"])
+			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpFlex"])
 		}
 	}
 	return formattedText, imgLink
@@ -225,7 +223,7 @@ func doEverything(body *schemes.WebhookBody) {
 
 	// Remove /euw from the Message.Text
 	body.Message.Text = strings.ReplaceAll(body.Message.Text, "/euw", "")
-	log.Println("Nickname: ",body.Message.Text)
+	log.Println("Nickname: ", body.Message.Text)
 
 	// Get the id of the riot account
 	responseAccountData := getAccountID(body.Message.Text)
@@ -311,5 +309,4 @@ func doEverything(body *schemes.WebhookBody) {
 func main() {
 	log.Println("Listening")
 	http.ListenAndServe(":9002", http.HandlerFunc(Handler))
-
 }
