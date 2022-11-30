@@ -13,7 +13,8 @@ import (
 	"github.com/eXpansiiVe/LoLBot/pkg/schemes"
 )
 
-const apiKey string = "RGAPI-fd2cdcde-e835-44da-8648-4c691175c919"
+const riotApiKey string = ""
+const telegramApiKey string = ""
 
 // This handler is called everytime telegram sends us a webhook event
 func Handler(res http.ResponseWriter, req *http.Request) {
@@ -59,7 +60,7 @@ func filterRequestData(rawResponseData io.ReadCloser, errorMessage string) []byt
 // Get the summoner id through API
 func getAccountID(nickname string) []byte {
 	log.Println("Inside function getAccountID")
-	accountLink := "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + url.QueryEscape(nickname) + "?api_key=" + url.QueryEscape(apiKey)
+	accountLink := "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + url.QueryEscape(nickname) + "?api_key=" + url.QueryEscape(riotApiKey)
 
 	rawResponseAccountData := getRequestData(accountLink, "Got an error retrieving the Account ID api")
 
@@ -77,7 +78,7 @@ func getAccountID(nickname string) []byte {
 func getSummonerData(id string) []byte {
 	log.Println("Inside function getSummonerData")
 
-	playerDataLink := "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + url.QueryEscape(id) + "?api_key=" + url.QueryEscape(apiKey)
+	playerDataLink := "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + url.QueryEscape(id) + "?api_key=" + url.QueryEscape(riotApiKey)
 
 	rawResponsePlayerData := getRequestData(playerDataLink, "Got an error retrieving the summoner data")
 
@@ -126,36 +127,36 @@ func messageTextFormatter(playerSlice map[string]string, imgId string, schemeLol
 	log.Println("Inside function messageTextFormatter")
 	imgLink := "https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
 	schemeLen := len(schemeLolData)
-	formattedText := fmt.Sprintf("<b>Nome:</b> %v\n", playerSlice["Nickname"])
-	formattedText += fmt.Sprintf("<b>Livello:</b> %v\n\n", playerSlice["Level"])
+	formattedText := fmt.Sprintf("<b>Nickname:</b> %v\n", playerSlice["Nickname"])
+	formattedText += fmt.Sprintf("<b>Level:</b> %v\n\n", playerSlice["Level"])
 
 	if schemeLen == 1 {
 		if schemeLolData[0].QueueType == "RANKED_SOLO_5x5" {
 			formattedText += "<b>SoloQ</b> \n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankSoloQ"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsQ"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Rank:</b> %v\n", playerSlice["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Wins:</b> %v\n", playerSlice["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Loses:</b> %v\n", playerSlice["LosesQ"])
 			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpQ"])
 		} else {
 			formattedText += "<b>Flex</b>\n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankFlex"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsFlex"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Rank:</b> %v\n", playerSlice["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Wins:</b> %v\n", playerSlice["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Loses:</b> %v\n", playerSlice["LosesFlex"])
 			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpFlex"])
 		}
 	} else {
 		if schemeLolData[0].QueueType == "RANKED_SOLO_5x5" || schemeLolData[1].QueueType == "RANKED_SOLO_5x5" {
 			formattedText += "<b>SoloQ</b> \n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankSoloQ"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsQ"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesQ"])
+			formattedText += fmt.Sprintf("<b>Rank:</b> %v\n", playerSlice["RankSoloQ"])
+			formattedText += fmt.Sprintf("<b>Wins:</b> %v\n", playerSlice["WinsQ"])
+			formattedText += fmt.Sprintf("<b>Loses:</b> %v\n", playerSlice["LosesQ"])
 			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpQ"])
 		}
 		if schemeLolData[0].QueueType == "RANKED_FLEX_SR" || schemeLolData[1].QueueType == "RANKED_FLEX_SR" {
 			formattedText += "<b>Flex</b>\n"
-			formattedText += fmt.Sprintf("<b>Lega:</b> %v\n", playerSlice["RankFlex"])
-			formattedText += fmt.Sprintf("<b>Vittorie:</b> %v\n", playerSlice["WinsFlex"])
-			formattedText += fmt.Sprintf("<b>Sconfitte:</b> %v\n", playerSlice["LosesFlex"])
+			formattedText += fmt.Sprintf("<b>Rank:</b> %v\n", playerSlice["RankFlex"])
+			formattedText += fmt.Sprintf("<b>Wins:</b> %v\n", playerSlice["WinsFlex"])
+			formattedText += fmt.Sprintf("<b>Loses:</b> %v\n", playerSlice["LosesFlex"])
 			formattedText += fmt.Sprintf("<b>Lp:</b> %v\n\n", playerSlice["LpFlex"])
 		}
 	}
@@ -168,7 +169,7 @@ func sendPhotoMessage(chatId int64, messageId int, message string, link string) 
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
 	fmt.Printf("ChatId: %v\nMessageId:%v\nMessage: %v\nLink: %v\n", chatIdString, messageIdString, message, link)
-	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
+	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramApiKey) + "/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -193,7 +194,7 @@ func sendMessage(chatId int64, messageId int, message string) ([]byte, error) {
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
 	fmt.Printf("ChatId %v\nMessageId: %v\n", chatIdString, messageIdString)
-	formattedUrl := "https://api.telegram.org/bot5683492318:AAFW8Yt40ggMfd7eP5p-Ea1pzao2G_oAgsg/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
+	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramApiKey) + "/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -234,7 +235,7 @@ func doEverything(body *schemes.WebhookBody) {
 		log.Println("Got an error unmarshal response account data to schemePlayerNotFound")
 	}
 	if schemePlayerNotFound.Status.StatusCode == 404 {
-		message := fmt.Sprintf("L'username %s non è valido!", body.Message.Text)
+		message := fmt.Sprintf("Username %s is not valid!", body.Message.Text)
 		responseMessage, err := sendMessage(body.Message.Chat.ID, body.Message.MessageID, message)
 		if err != nil {
 			log.Println(err)
@@ -272,9 +273,12 @@ func doEverything(body *schemes.WebhookBody) {
 	// If player rank not found
 	if err != nil {
 		log.Println(err)
-		message := fmt.Sprintf("Il rank del player %s non è stato trovato!", body.Message.Text)
+		formattedMessage := fmt.Sprintf("<b>Nickname:</b>%v\n", body.Message.Text)
+		formattedMessage += fmt.Sprintf("<b>Level:</b> %v\n\n", playerInfo["Level"])
+		imgLink := "https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/" + url.QueryEscape(imgId) + ".png"
+		formattedMessage += fmt.Sprintf("<b>Rank of player%s not found!</>", body.Message.Text)
 		// Send a message to the message sender on telegram with the results
-		responseMessage, err := sendMessage(body.Message.Chat.ID, body.Message.MessageID, message)
+		responseMessage, err := sendPhotoMessage(body.Message.Chat.ID, body.Message.MessageID, formattedMessage, imgLink)
 
 		if err != nil {
 			log.Println(err)
@@ -308,5 +312,5 @@ func doEverything(body *schemes.WebhookBody) {
 }
 func main() {
 	log.Println("Listening")
-	http.ListenAndServe(":9002", http.HandlerFunc(Handler))
+	http.ListenAndServe(":3000", http.HandlerFunc(Handler))
 }
