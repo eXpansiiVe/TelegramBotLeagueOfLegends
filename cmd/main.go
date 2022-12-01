@@ -16,8 +16,8 @@ import (
 const riotApiKey string = ""
 const telegramApiKey string = ""
 
-// This handler is called everytime telegram sends us a webhook event
-func Handler(res http.ResponseWriter, req *http.Request) {
+// Handler is called everytime telegram sends us a webhook event
+func Handler(_ http.ResponseWriter, req *http.Request) {
 	// First, decode the JSON response body
 	body := &schemes.WebhookBody{}
 	if err := json.NewDecoder(req.Body).Decode(body); err != nil {
@@ -28,7 +28,7 @@ func Handler(res http.ResponseWriter, req *http.Request) {
 		log.Println("Message ignored")
 		return
 	}
-	doEverything(body)
+	checkCommand(body)
 }
 
 func isValidCommand(b *schemes.WebhookBody) bool {
@@ -213,7 +213,7 @@ func sendMessage(chatId int64, messageId int, message string) ([]byte, error) {
 	return responseData, nil
 }
 
-func doEverything(body *schemes.WebhookBody) {
+func checkCommand(body *schemes.WebhookBody) {
 	// Instantiate every schemes
 	var schemeAccount schemes.AccountRiot
 	var schemeLoLData schemes.LoLAccount
@@ -310,7 +310,11 @@ func doEverything(body *schemes.WebhookBody) {
 	fmt.Println("------------------------------")
 
 }
+
 func main() {
-	log.Println("Listening")
-	http.ListenAndServe(":3000", http.HandlerFunc(Handler))
+	log.Println("Listening on port 3000")
+	err := http.ListenAndServe(":3000", http.HandlerFunc(Handler))
+	if err != nil {
+		log.Panic(err)
+	}
 }
