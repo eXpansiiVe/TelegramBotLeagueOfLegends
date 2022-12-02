@@ -47,7 +47,7 @@ Now, all we need to do is let telegram know that our bot has to talk to this url
 So just just enter this in your terminal, changing the **URL** with the one from ngrok and put your **bot token** in the right spot.
 
 ```
-curl -F "url=https://e54851fb.ngrok.io/"  https://api.telegram.org/bot<your_api_token>/setWebhook
+curl -F "url=https://b46129ha.ngrok.io/"  https://api.telegram.org/bot<your_api_token>/setWebhook
 ```
 
 N.B.: You have to use this command up here even if you already have a hosted server.
