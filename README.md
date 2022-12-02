@@ -5,7 +5,7 @@ Info includes summoner name, level, profile image, ranked tier, division, wins, 
 
 That's how the output looks like:
 
-![image](https://imgur.com/wsNv16o)
+![alt text](/BotShowCase.png)
 
 # How make it work
 
@@ -52,4 +52,4 @@ N.B.: You have to use this command up here even if you already have a hosted ser
 
 # Last thing!
 
-Remember that's my first project, i know it's a bit messy but if you want to improve the code feel free to do so.
+Remember, that's my first project! I know it's a bit messy but if you want to improve the code feel free to do so.
