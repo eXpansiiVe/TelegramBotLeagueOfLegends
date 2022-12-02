@@ -51,7 +51,7 @@ curl -F "url=https://b46129ha.ngrok.io/"  https://api.telegram.org/bot<your_api_
 ```
 
 N.B.: You have to use this command up here even if you already have a hosted server.
-DONE, now you have only to run it:
+\DONE, now you have only to run it:
 ```
 go run ./cmd 
 ```
