@@ -19,7 +19,6 @@ const telegramBotToken string = ""
 // Handler is called everytime telegram sends us a webhook event
 func Handler(r http.ResponseWriter, req *http.Request) {
 	// First, decode the JSON response body
-	fmt.Println("recived smthing")
 	body := &schemes.WebhookBody{}
 	if err := json.NewDecoder(req.Body).Decode(body); err != nil {
 		log.Println("could not decode request body", err)
