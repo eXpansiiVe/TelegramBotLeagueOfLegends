@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/eXpansiiVe/LoLBot/pkg/schemes"
+	"github.com/eXpansiiVe/TelegramBotLeagueOfLegends/pkg/schemes"
 )
 
 const riotApiKey string = ""

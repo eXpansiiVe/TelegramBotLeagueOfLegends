@@ -1,3 +1,3 @@
-module github.com/eXpansiiVe/LoLBot
+module github.com/eXpansiiVe/TelegramBotLeagueOfLegends
 
 go 1.19
