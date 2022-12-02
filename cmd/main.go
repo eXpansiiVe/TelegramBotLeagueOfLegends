@@ -14,11 +14,12 @@ import (
 )
 
 const riotApiKey string = ""
-const telegramApiKey string = ""
+const telegramBotToken string = ""
 
 // Handler is called everytime telegram sends us a webhook event
-func Handler(_ http.ResponseWriter, req *http.Request) {
+func Handler(r http.ResponseWriter, req *http.Request) {
 	// First, decode the JSON response body
+	fmt.Println("recived smthing")
 	body := &schemes.WebhookBody{}
 	if err := json.NewDecoder(req.Body).Decode(body); err != nil {
 		log.Println("could not decode request body", err)
@@ -169,7 +170,7 @@ func sendPhotoMessage(chatId int64, messageId int, message string, link string) 
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
 	fmt.Printf("ChatId: %v\nMessageId:%v\nMessage: %v\nLink: %v\n", chatIdString, messageIdString, message, link)
-	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramApiKey) + "/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
+	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramBotToken) + "/sendPhoto?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&photo=" + url.QueryEscape(link) + "&caption=" + url.QueryEscape(message) + "&parse_mode=html"
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -194,7 +195,7 @@ func sendMessage(chatId int64, messageId int, message string) ([]byte, error) {
 	chatIdString := fmt.Sprintf("%d", chatId)
 	messageIdString := fmt.Sprintf("%d", messageId)
 	fmt.Printf("ChatId %v\nMessageId: %v\n", chatIdString, messageIdString)
-	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramApiKey) + "/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
+	formattedUrl := "https://api.telegram.org/bot" + url.QueryEscape(telegramBotToken) + "/sendMessage?chat_id=" + url.QueryEscape(chatIdString) + "&reply_to_message_id=" + url.QueryEscape(messageIdString) + "&text=" + url.QueryEscape(message)
 
 	rawResponseData, err := http.Get(formattedUrl)
 	if err != nil {
@@ -312,7 +313,7 @@ func checkCommand(body *schemes.WebhookBody) {
 }
 
 func main() {
-	log.Println("Listening on port 3000")
+	log.Println("Listening")
 	err := http.ListenAndServe(":3000", http.HandlerFunc(Handler))
 	if err != nil {
 		log.Panic(err)
