@@ -40,7 +40,7 @@ Once successful, you should be able to see the public URL for your bot,
 that should be something like this: \
 `https://a15291fk.ngrok.io`
 
-# Connect telegram to your server
+# Setup Webhook
 
 Now, all we need to do is let telegram know that our bot has to talk to this url whenever it receives any message.
 
