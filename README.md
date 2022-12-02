@@ -1,4 +1,4 @@
-# TelegramBot for LeagueOfLegends summoner info
+# About the project
 
 It's just a Telegram bot that displays a given lol summoner's info.
 Info includes summoner name, level, profile image, ranked tier, division, wins, loses and lp for SoloQ and Flex (if available).
@@ -7,7 +7,7 @@ That's how the output looks like:
 
 ![alt text](/BotShowCase.png)
 
-# How make it work
+# Getting Started
 
 First of all you need a telegram bot token and a riot api key, if you don't have one of those just follow this links:\
 TelegramBot: https://t.me/BotFather\
@@ -50,7 +50,9 @@ So just just enter this in your terminal, changing the **URL** with the one from
 curl -F "url=https://b46129ha.ngrok.io/"  https://api.telegram.org/bot<your_api_token>/setWebhook
 ```
 
-N.B.: You have to use this command up here even if you already have a hosted server. \
+N.B.: You have to use this command up here even if you already have a hosted server. 
+# Usage
+
 DONE, now you have only to run it:
 ```
 go run ./cmd 
