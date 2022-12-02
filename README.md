@@ -1,6 +1,6 @@
 # TelegramBot for LeagueOfLegends summoner info
 
-It's just a League of Legends Telegram bot that displays a given summoner's info.
+It's just a Telegram bot that displays a given lol summoner's info.
 Info includes summoner name, level, profile image, ranked tier, division, wins, loses and lp for SoloQ and Flex (if available).
 
 That's how the output looks like:
@@ -17,7 +17,7 @@ Now that you have them go in the main file and put them in the corrispective con
 const riotApiKey string = ""
 const telegramBotToken string = ""
 ```
-To make it recieve API call from telegram we have to deploy a server it, so if you already have one where you can recieve calls look at the main function and put the ip inside the http.ListenAndServer function with the right port.
+To make it recieve API call from telegram we have to deploy a server, so if you already have one where you can recieve calls look at the main function, put the ip inside the http.ListenAndServer function with the right port and skip the server creation part.
 
 ```
 func main() {
@@ -40,6 +40,8 @@ Once successful, you should be able to see the public URL for your bot,
 that should be something like this: \
 `https://a15291fk.ngrok.io`
 
+# Connect telegram to your server
+
 Now, all we need to do is let telegram know that our bot has to talk to this url whenever it receives any message.
 
 So just just enter this in your terminal, changing the **URL** with the one from ngrok and put your **bot token** in the right spot.
@@ -49,6 +51,7 @@ curl -F "url=https://e54851fb.ngrok.io/"  https://api.telegram.org/bot<your_api_
 ```
 
 N.B.: You have to use this command up here even if you already have a hosted server.
+DONE, enjoy it!
 
 # Last thing!
 
